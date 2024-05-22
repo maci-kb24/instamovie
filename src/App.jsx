@@ -1,7 +1,17 @@
 import "./App.css";
-import { useState } from "react";
+import Logo from "./components/Logo";
+import Header from "./components/Header";
+import Search from "./components/Search";
+import Menu from "./components/Menu";
+import Navbar from "./components/Navbar";
+import SignIn from "./components/SignIn";
+import Main from "./components/Main";
+import FeaturedMovies from "./components/FeaturedMovies";
+import TrendingMovies from "./components/TrendingMovies";
+import Movies from "./components/Movies";
+import { useState, useEffect } from "react";
 
-const watchedmovies = [
+const trendingMovies = [
   {
     id: 1,
     title: "The Matrix",
@@ -46,7 +56,7 @@ const watchedmovies = [
   },
 ];
 
-const movies = [
+const featuredMovies = [
   {
     id: 1,
     title: "The Matrix",
@@ -120,84 +130,65 @@ const movies = [
 ];
 
 function App() {
-  const [watched, setWatched] = useState(watchedmovies);
-  const [searchMovies, setSearchMovies] = useState(movies);
+  const [movies, setMovies] = useState([]);
+  const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  // const [trending, setTrending] = useState(trendingMovies);
+  // const [featured, setFeatured] = useState(featuredMovies);
+  // const query = 'matrix';
+
+  const KEY = "48eb5390";
+
+  useEffect(() => {
+
+    async function fetchMovies() {
+      try {
+        setIsLoading(true);
+        const res = await fetch(
+          `https://www.omdbapi.com/?apikey=${KEY}&s=${search}`
+        );
+
+        if (!res.ok) {
+          throw new Error("Network response was not ok");
+        }
+
+        const data = await res.json();
+
+        if (data.Response === "False") {
+          throw new Error("Movie not found");
+        }
+
+        setMovies(data.Search);
+        console.log(data.Search);
+      } catch (error) {
+        console.log(error.message);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchMovies();
+  }, [search]);
 
   return (
     <div className="App">
-      <header className="bg-slate-900 text-white ">
-        <div className="navbar  container flex items-center justify-between px-10 py-4 gap-6">
-          <div className="logo">
-            <p>InstaMovie</p>
-          </div>
-          <div className="flex-1"> 
-            <input type="text" placeholder="Search a Movie" className="input w-full py-2 px-2" />
-          </div>
-          <div className="menu flex items-center">
-            <nav>
-              <ul className="flex gap-4">
-                <li >Home</li>
-                <li>
-                  My List{" "}
-                  <span className="text-slate-900 inline-block bg-lime-50 border-blue-50 border-solid border-2">
-                    0
-                  </span>
-                </li>
-              </ul>
-            </nav>
-            <div className="pl-4">
-              <button className="btn bg-yellow-400 text-black py-2 px-4">
-                Sign In
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </header>
-      <main>
-        <div className="movie-box">
-          <div>
-            <h1>Latest Movies</h1>
-          </div>
-          <div className="movie-list grid  md:grid-cols-4 grid-cols-[260px_minmax(900px,_1fr)_100px] gap-2">
-              {searchMovies?.map(movie => (
-              <div className="movie-card w-full" key={movie.id}>
-                <img
-                  className="movie-img h-56 object-cover w-full"
-                  src={movie.imageUrl}
-                  alt={movie.id}
-                />
-                <div className="movie-info">
-                  <h1 className="movie-title text-slate-900">{movie.title}</h1>
-                  <p>{movie.rating}</p>
-                  <p>Released:{movie.year}</p>
-                </div>
-            </div>
-              ))
-              }
-          </div>
-        </div>
-        <div className="watched-box">
-          <div className="watched-list">
-          {watched?.map(watch => (
-              <div className="watched-card w-full" key={watch.id}>
-                <img
-                  className="movie-img h-56 object-cover w-full"
-                  src={watch.imageUrl}
-                  alt={watch.id}
-                />
-                <div className="watched-info">
-                  <h1 className="watched-title text-slate-900">{watch.title}</h1>
-                  <p>{watch.rating}</p>
-                  <p>Released:{watch.year}</p>
-                  <p>Description: {watch.description}</p>
-                </div>
-            </div>
-              ))
-              }
-          </div>
-        </div>
-      </main>
+      <Header>
+        <Logo />
+        <Search search={search} setSearch={setSearch} />
+        <Menu>
+          <Navbar />
+          <SignIn />
+        </Menu>
+      </Header>
+      <Main>
+        {isLoading ? <p>Loading...</p> : <Movies movies={movies} />}
+        {error && <p>{error}</p>}
+        {!isLoading && !error && <Movies movies={movies} />}
+        <TrendingMovies trendingMovies={trendingMovies} />
+        <FeaturedMovies featuredMovies={featuredMovies} />
+      </Main>
     </div>
   );
 }
